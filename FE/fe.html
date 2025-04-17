@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SanitationToken Interface</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.8.1/dist/ethers.umd.min.js"></script>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 2rem auto; }
+    input, button { margin: .3rem 0; width: 100%; padding: .4rem; }
+    .output { background: #fafafa; padding: .75rem; min-height: 1.5rem; }
+  </style>
+</head>
+<body>
+  <h1>SanitationToken Interface</h1>
+
+  <!-- CONNECT -->
+  <button id="connectBtn">🔌 Connect Wallet</button>
+  <div class="output" id="connectStatus"></div>
+
+  <!-- TOKEN INFO -->
+  <h3>Token Info</h3>
+  <div class="output" id="tokenMeta"></div>
+
+  <!-- READ BALANCE -->
+  <h3>Read Balance</h3>
+  <input id="balanceAddr" placeholder="Address to query…" />
+  <button id="balBtn">Get Balance</button>
+  <div class="output" id="balOut"></div>
+
+  <!-- TRANSFER -->
+  <h3>Transfer Tokens</h3>
+  <input id="toAddr" placeholder="Recipient address…" />
+  <input id="amount" placeholder="Amount (whole tokens)" />
+  <button id="xferBtn">Send</button>
+  <div class="output" id="xferOut"></div>
+
+<script>
+let provider, signer, token;
+
+// ← Embed your deployed contract address here ↓
+const CONTRACT_ADDRESS = "0x530Cc504b931277F2289801024e5f1703201d25D";
+
+// ERC‑20 ABI fragment
+const abi = [
+  "function name() view returns (string)",
+  "function symbol() view returns (string)",
+  "function decimals() view returns (uint8)",
+  "function totalSupply() view returns (uint256)",
+  "function balanceOf(address) view returns (uint256)",
+  "function transfer(address,uint256) returns (bool)",
+  "event Transfer(address indexed,address indexed,uint256)"
+];
+
+document.getElementById('connectBtn').onclick = async () => {
+  if (!window.ethereum) return alert('Install MetaMask!');
+  provider = new ethers.BrowserProvider(window.ethereum);
+  await provider.send("eth_requestAccounts", []);
+  signer = await provider.getSigner();
+  document.getElementById('connectStatus').textContent =
+    `Connected as ${await signer.getAddress()}`;
+
+  // instantiate token once connected:
+  token = new ethers.Contract(CONTRACT_ADDRESS, abi, signer);
+
+  // fetch and show basic token metadata:
+  const [n, sym, dec, tot] = await Promise.all([
+    token.name(), token.symbol(), token.decimals(), token.totalSupply()
+  ]);
+  document.getElementById('tokenMeta').textContent =
+    `${n} (${sym}) · Decimals ${dec} · Supply ${ethers.formatUnits(tot, dec)}`;
+};
+
+document.getElementById('balBtn').onclick = async () => {
+  if (!token) return alert('Connect wallet first');
+  const addr = document.getElementById('balanceAddr').value.trim();
+  if (!addr) return;
+  const bal = await token.balanceOf(addr);
+  const dec = await token.decimals();
+  document.getElementById('balOut').textContent =
+    `${ethers.formatUnits(bal, dec)} tokens`;
+};
+
+document.getElementById('xferBtn').onclick = async () => {
+  if (!token) return alert('Connect wallet first');
+  const to = document.getElementById('toAddr').value.trim();
+  const amt = document.getElementById('amount').value.trim();
+  if (!to || !amt) return;
+
+  const dec = await token.decimals();
+  const tx = await token.transfer(to, ethers.parseUnits(amt, dec));
+  document.getElementById('xferOut').textContent = '⏳ Waiting for confirmation…';
+  await tx.wait();
+  document.getElementById('xferOut').textContent =
+    `✅ Tx mined: ${tx.hash.slice(0, 10)}…`;
+};
+</script>
+</body>
+</html>
