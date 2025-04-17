@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-/**
- * @title CleanToken
- * @dev Simplified ERC‑20 token with no constructor parameters—deploys with a fixed supply
- */
-contract CleanToken {
+
+contract Sanitation {
     // ───── Metadata & Supply ─────
-    string  public name       = "Clean Token";
-    string  public symbol     = "CLN";
+    string  public name       = "Sanitation Token";
+    string  public symbol     = "SNT";
     uint8   public constant decimals   = 18;
     uint256 public totalSupply;
 
@@ -34,7 +31,7 @@ contract CleanToken {
      * @dev Transfer `value` tokens from caller to `to`.
      */
     function transfer(address to, uint256 value) external returns (bool) {
-        require(balanceOf[msg.sender] >= value, "CleanToken: balance too low");
+        require(balanceOf[msg.sender] >= value, "SanitationToken: balance too low");
         _move(msg.sender, to, value);
         return true;
     }
@@ -53,7 +50,7 @@ contract CleanToken {
      */
     function transferFrom(address from, address to, uint256 value) external returns (bool) {
         uint256 allowed = allowance[from][msg.sender];
-        require(allowed >= value, "CleanToken: allowance too low");
+        require(allowed >= value, "SanitationToken: allowance too low");
         allowance[from][msg.sender] = allowed - value;
         _move(from, to, value);
         return true;
@@ -61,7 +58,7 @@ contract CleanToken {
 
     /// @dev Internal move helper
     function _move(address from, address to, uint256 amount) internal {
-        require(to != address(0), "CleanToken: zero address");
+        require(to != address(0), "SanitationToken: zero address");
         balanceOf[from] -= amount;
         balanceOf[to]   += amount;
         emit Transfer(from, to, amount);
